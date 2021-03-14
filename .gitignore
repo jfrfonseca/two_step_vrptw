@@ -1,0 +1,13 @@
+# Arquivo GITIGNORE para evitar o versionamento de arquivos que não trazem informações
+
+# JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
+.idea
+.idea_modules/
+
+# CMake
+cmake-build-*/
+
+# Python
+__pycache__
+*.pyc
+
