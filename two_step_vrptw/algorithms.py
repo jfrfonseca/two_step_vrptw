@@ -3,7 +3,7 @@
 
 """algorithms.py: Implementação do algoritmo"""
 
-__copyright__ = "Copyright (c) 2021 Isabella Mendes & José Fonseca. MIT. See attached LICENSE.txt file"
+__copyright__ = "Copyright (c) 2021 Isabella Freitas & José Fonseca. MIT. See attached LICENSE.txt file"
 
 
 from typing import List, Tuple

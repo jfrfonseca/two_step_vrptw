@@ -3,7 +3,7 @@
 
 """tests.py: Testes de unidade da implementação do algoritmo"""
 
-__copyright__ = "Copyright (c) 2021 Isabella Mendes & José Fonseca. MIT. See attached LICENSE.txt file"
+__copyright__ = "Copyright (c) 2021 Isabella Freitas & José Fonseca. MIT. See attached LICENSE.txt file"
 
 
 import timeit
