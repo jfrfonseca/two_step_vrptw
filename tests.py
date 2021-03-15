@@ -49,5 +49,9 @@ if __name__ == '__main__':
     # atratividade = calcula_atratividade(parametros, dict_referencias, df_distancias, clientes_viaveis, carro)
     # pprint(atratividade)
 
-    carro = rota_independente(parametros, dict_referencias, df_distancias, deposito, capacidade_carro, velocidade=1)
-    carro.display()
+    qtd_repeticoes = 20
+    print('ATRATIVIDADE', '(ms)', '=>',
+          round(timeit.timeit(lambda: rota_independente(parametros, dict_referencias, df_distancias, deposito, capacidade_carro, velocidade=1),
+                              number=qtd_repeticoes) / qtd_repeticoes * 1000, 3))
+    # carro = rota_independente(parametros, dict_referencias, df_distancias, deposito, capacidade_carro, velocidade=1)
+    # carro.display()
