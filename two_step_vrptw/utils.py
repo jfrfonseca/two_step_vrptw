@@ -38,7 +38,7 @@ class Cliente(Posicao):
     servico: int
     tipo = 'Cliente'
 
-    def __repr__(self): return f'<{self.demanda} ({self.x}, {self.y}) [{self.inicio}, {self.fim}] {self.servico}>'
+    def __repr__(self): return f'CLIENTE({self.demanda} ({self.x}, {self.y}) [{self.inicio}, {self.fim}] {self.servico})'
 
 
 @dataclass(frozen=True)
@@ -66,6 +66,8 @@ class Carro(object):
         self.agenda = [self.origem]
         self.carga = self.capacidade
         self.fim = 0
+
+    def __repr__(self): return f'Carro({self.origem}>>{len(self.agenda)}>>{self.agenda[-1]} [{self.carga}/{self.capacidade}] ({self.inicio}, {self.fim}, {self.velocidade}))'
 
     @property
     def posicao(self): return self.agenda[-1]
@@ -99,6 +101,21 @@ class Carro(object):
         self.agenda.append(cliente)
         self.carga = self.carga - cliente.demanda
 
+    def display(self):
+        print(self)
+        fim_anterior = 0
+        cli_anterior = self.agenda[0]
+        print('\t', cli_anterior)
+        for cli in self.agenda[1:]:
+            dist = cli_anterior.distancia(cli)
+            tempo = int(dist/self.velocidade) + 1
+            layover = 0 if ((fim_anterior + tempo) >= cli.inicio) else (cli.inicio - fim_anterior - tempo)
+            layover += cli.servico
+            print('\t\t', dist, '~', fim_anterior, '>>', tempo, '+', layover, '>>', fim_anterior+tempo+layover)
+            print('\t', cli)
+            fim_anterior = fim_anterior + tempo + layover
+            cli_anterior = cli
+
 
 def copia_carro(original: Carro):
     carro = Carro(origem=original.origem, velocidade=original.velocidade, capacidade=original.capacidade)
@@ -117,34 +134,11 @@ class Parametros(object):
     peso_recursoes: float
     limite_recursoes: int
     clientes_recursao: int
+    limite_iteracoes: int = 1000
 
 
 # ######################################################################################################################
 # UTILS
-
-
-def simula_atendimento(carro:Carro, cliente:Cliente) -> Tuple[bool, float, int, int]:
-
-    # Se sumariamente não é possível que o carro atenda o cliente, retornamos NONE
-    if carro.carga < cliente.demanda: return False, -1.0, -1, -1
-    if carro.fim >= cliente.fim: return False, -1.0, -1, -1
-
-    # Calculamos a distância de deslocamento no atendimento, o tempo de deslocamento e o potencial FIM do atendimento
-    # Se não é possível que o atendimento termine até o fechamento da janela do cliente, retornamos NONE
-    distancia = carro.posicao.distancia(cliente)
-    tempo_deslocamento = carro.tempo_deslocamento(cliente, distancia=distancia)
-    fim_atendimento = carro.fim + tempo_deslocamento + cliente.servico
-    if fim_atendimento > cliente.fim: return False, distancia, tempo_deslocamento, fim_atendimento
-
-    # Retornamos uma tupla contendo:
-    # A viabilidade/validade do resultado
-    # A distância percorrida no atendimento
-    # O tempo de deslocamento
-    # O novo momento de disponibilidade (FIM) do carro,
-    #   considerando a possibilidade do mesmo ter chegado antes da abertura do cliente. Por isso o fim do atendimento é
-    #   sempre o máximo entre o fim no caso em que o atendimento começa no momento em que o veículo chega no cliente, e
-    #   o fim no caso em que o veículo chegou e teve que esperar até a abertura do cliente para então começar o serviço.
-    return True, distancia, tempo_deslocamento, max([fim_atendimento, cliente.inicio + cliente.servico])
 
 
 def le_mapa(arquivo):

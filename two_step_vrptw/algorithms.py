@@ -9,9 +9,13 @@ __copyright__ = "Copyright (c) 2021 Isabella Freitas & José Fonseca. MIT. See a
 from typing import List, Tuple
 
 from pandas import DataFrame
-from numpy import power, sqrt
+from numpy import power, sqrt, random
 
 from two_step_vrptw.utils import Deposito, Cliente, Carro, Parametros, copia_carro
+
+
+# ######################################################################################################################
+# PAYLOAD
 
 
 def cria_matriz_de_distancias(deposito: Deposito, clientes: List[Cliente]) -> (DataFrame, dict):
@@ -100,3 +104,38 @@ def calcula_atratividade(parametros: Parametros, dict_referencias: dict, matriz_
     # Retornamos a atratividade compensada
     return sorted(atratividade.items(), key=lambda par: -1*par[1])[:parametros.clientes_recursao]
 
+
+def rota_independente(parametros: Parametros, dict_referencias: dict, matriz_de_distancias: DataFrame,
+                      deposito:Deposito, capacidade: float, velocidade: int) -> Carro:
+
+    # Inicializamos um carro com um deposito qualquer
+    carro = Carro(origem=deposito, capacidade=capacidade, velocidade=velocidade)
+
+    # Loop principal de execucao:
+    for iteracao in range(parametros.limite_iteracoes):
+
+        # Identificamos clientes viáveis
+        clientes_viaveis = identifica_clientes_viaveis(dict_referencias, matriz_de_distancias, carro)
+
+        # Se não temos clientes viáveis
+        if len(clientes_viaveis) == 0:
+
+            # Se estamos em um cliente, vamos até o depósito e avançamos no loop
+            if carro.agenda[-1].tipo == 'Cliente':
+                carro.reabastecimento(deposito)
+                continue
+
+            # Se estamos em um depósito, retornamos
+            else:
+                return carro
+
+        # Se chegamos até aqui, temos clientes viáveis e podemos continuar. Calculamos a atratividade dos clientes
+        atratividade = calcula_atratividade(parametros, dict_referencias, matriz_de_distancias, clientes_viaveis, carro)
+
+        # Selecionamos randomicamente um cliente viável por roleta
+        valor_atratividade = [cli[1] for cli in atratividade]
+        valor_atratividade_total = sum(valor_atratividade)
+        cliente = random.choice([cli[0] for cli in atratividade], p=[v/valor_atratividade_total for v in valor_atratividade])
+
+        # Avançamos no caminho para o cliente
+        carro.atendimento(dict_referencias[cliente])
