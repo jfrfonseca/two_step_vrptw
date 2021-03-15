@@ -71,15 +71,10 @@ def calcula_atratividade(parametros: Parametros, dict_referencias: dict, matriz_
     # Calculamos a atratividade imediata de cada cliente viável
     posicao_atual = str(carro.agenda[-1])
     linha_distancias = matriz_de_distancias.loc[posicao_atual].to_dict()
-    atratividade = {}
-    dict_referencias_cv = {}
-    for c, v in clientes_viaveis.items():
-        ref = dict_referencias[c]
-        dict_referencias_cv[c] = ref
-        atratividade[c] = sum([
-            parametros.peso_distancia * (1.0/linha_distancias[c]),
-            (parametros.peso_urgencia * ((ref.fim - ref.inicio) / abs(v))) if v > 0 else 0.0
-        ])
+    atratividade = {c: sum([
+        parametros.peso_distancia * (1.0/linha_distancias[c]),
+        (parametros.peso_urgencia * ((dict_referencias[c].fim - dict_referencias[c].inicio) / abs(v))) if v > 0 else 0.0
+    ]) for c, v in clientes_viaveis.items()}
 
     # Selecionamos apenas os clientes viáveis de maior atratividade
     atratividade = sorted(atratividade.items(), key=lambda par: -1*par[1])[:parametros.clientes_recursao]
@@ -94,10 +89,10 @@ def calcula_atratividade(parametros: Parametros, dict_referencias: dict, matriz_
         # Geramos um carro simulado para a recursão e calculamos a atratividade dos clientes depois do atual
         carro_recursao = copia_carro(carro)
         carro_recursao.atendimento(dict_referencias[cliente])
-        sub_clientes_viaveis = identifica_clientes_viaveis(dict_referencias_cv, matriz_de_distancias, carro_recursao)
+        sub_clientes_viaveis = identifica_clientes_viaveis(dict_referencias, matriz_de_distancias, carro_recursao)
         if len(sub_clientes_viaveis) == 0: continue
         sub_atratividade = calcula_atratividade(
-            parametros, dict_referencias_cv, matriz_de_distancias,
+            parametros, dict_referencias, matriz_de_distancias,
             sub_clientes_viaveis, carro_recursao,
             numero_recursao=numero_recursao+1
         )
