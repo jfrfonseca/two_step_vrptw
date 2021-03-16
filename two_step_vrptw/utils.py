@@ -8,7 +8,7 @@ __copyright__ = "Copyright (c) 2021 Isabella Freitas & José Fonseca. MIT. See a
 
 from math import sqrt
 from sys import maxsize as int_inf
-from typing import List, Tuple, Union, Dict
+from typing import List, Tuple, Union, Dict, Iterator
 from dataclasses import dataclass, field
 from functools import lru_cache as memoized
 
@@ -28,6 +28,7 @@ class Parametros(object):
     limite_recursoes: int
     clientes_recursao: int
     limite_iteracoes: int = 1000
+    qtd_novos_carros_por_rodada: int = 4
 
 
 @dataclass(frozen=True)
@@ -59,7 +60,7 @@ class Deposito(Posicao):
     demanda = 0.0
     inicio = 0
     fim = int_inf
-    servico = 0.0
+    servico = 0
     tipo = 'Depósito'
 
     def __repr__(self): return f'DEPOSITO({self.x}, {self.y})'
@@ -140,7 +141,7 @@ class Carro(object):
     velocidade: int
     capacidade: float
     carga:      float = 0.0
-    agenda:     Union[List[Cliente], List[Deposito]] = field(default_factory=list)
+    agenda:     List[Union[Cliente, Deposito]] = field(default_factory=list)
     fim:        int = 0
     _inicio = None
 
@@ -158,7 +159,9 @@ class Carro(object):
     @property
     def inicio(self):
         return 0 if len(self.agenda) == 0 else max([
-            0, self.agenda[1].inicio - self.tempo_deslocamento(origem=self.agenda[0], destino=self.agenda[1])])
+            0,
+            self.agenda[1].inicio - self.tempo_deslocamento(origem=self.agenda[0], destino=self.agenda[1])
+        ])
 
     @property
     def clientes_atendidos(self) -> set:
@@ -169,45 +172,70 @@ class Carro(object):
         distancia = pos.distancia(destino) if distancia is None else distancia  # Speedup com pre-computado
         return int(distancia / self.velocidade) + 1
 
-    def reabastecimento(self, deposito: Deposito):
+    def reabastecimento(self, deposito: Deposito) -> (float, int, int):
+        distancia = self.posicao.distancia(deposito)
+        tempo_deslocamento = self.tempo_deslocamento(deposito, distancia=distancia)
+        delta_fim = tempo_deslocamento + deposito.servico
+        self.fim += delta_fim
         self.agenda.append(deposito)
         self.carga = self.capacidade
+        return distancia, tempo_deslocamento, delta_fim-tempo_deslocamento
 
-    def atendimento(self, cliente: Cliente):
+    def atendimento(self, cliente: Cliente) -> (float, int, int):
         distancia = self.posicao.distancia(cliente)
         tempo_deslocamento = self.tempo_deslocamento(cliente, distancia=distancia)
-        self.fim = max([self.fim + tempo_deslocamento + cliente.servico, cliente.inicio + cliente.servico])
+        delta_fim = max([self.fim + tempo_deslocamento + cliente.servico, cliente.inicio + cliente.servico]) - self.fim
+        assert delta_fim > 0, f'ABASTECIMENTO INVALIDO {self} -> {cliente}'
+        self.fim += delta_fim
         self.agenda.append(cliente)
         self.carga = self.carga - cliente.demanda
-        return (distancia, tempo_deslocamento)
+        return distancia, tempo_deslocamento, delta_fim-tempo_deslocamento
 
     def resultado(self, display=True) -> Tuple[int, float, int, int, int]:
-        distancia_total = 0
+
+        if display: print(self)
+        dummy = Carro(id='DUMMY:'+self.id, origem=self.origem, velocidade=self.velocidade, capacidade=self.capacidade)
+        distancia_total = 0.0
         tempo_deslocamento_total = 0
         tempo_layover_total = 0
-        fim_anterior = 0
-        cli_anterior = self.agenda[0]
-        if display: print(self)
-        if display: print('\t', cli_anterior)
 
-        for cli in self.agenda[1:]:
-            distancia = cli_anterior.distancia(cli)
-            tempo_deslocamento = int(distancia/self.velocidade) + 1
-            tempo_layover = max([0, cli.inicio - (fim_anterior + tempo_deslocamento)]) + cli.servico
-            if display: print('\t\t', distancia, '~', fim_anterior, '>>', tempo_deslocamento, '+', tempo_layover, '>>', fim_anterior+tempo_deslocamento+tempo_layover)
-            if display: print('\t', cli)
-            fim_anterior = fim_anterior + tempo_deslocamento + tempo_layover
-            cli_anterior = cli
+        for pos, item in enumerate(self.agenda):
+            fim_anterior = dummy.fim
+            if item.tipo == 'Cliente':
+                distancia, tempo_deslocamento, tempo_layover = dummy.atendimento(item)
+            else:
+                distancia, tempo_deslocamento, tempo_layover = dummy.reabastecimento(item)
+
+            if display:
+                print('\t', item)
+                if pos < (len(self.agenda)-1):
+                    print('\t\t', distancia, '~', fim_anterior, '>>', tempo_deslocamento, '+', tempo_layover,
+                                                                '>>', fim_anterior+tempo_deslocamento+tempo_layover)
 
             distancia_total += distancia
             tempo_deslocamento_total += tempo_deslocamento
             tempo_layover_total += tempo_layover
+
         return self.inicio, distancia_total, tempo_deslocamento_total, tempo_layover_total, self.fim
 
 
-def copia_carro(original: Carro):
-    carro = Carro(id='COPY:'+original.id, origem=original.origem, velocidade=original.velocidade, capacidade=original.capacidade)
-    for item in carro.agenda[1:]:
+def copia_carro(og: Carro):
+    carro = Carro(id='COPY:' + og.id, origem=og.origem, velocidade=og.velocidade, capacidade=og.capacidade)
+    for item in og.agenda[1:]:
+        if item.tipo == 'Cliente':
+            carro.atendimento(item)
+        else:
+            carro.reabastecimento(item)
+    return carro
+
+
+def unifica_agendas_carros(pri: Carro, seg: Carro):
+    assert pri.id != seg.id, 'TENTATIVA DE UNIFICAR CARROS DE MESMO ID!'
+    assert len({str(pri.origem), pri.velocidade, pri.capacidade}.intersection(
+        {str(seg.origem), seg.velocidade, seg.capacidade})
+    ) == 3, 'TENTATIVA DE UNIFICAR CARROS DE CONFIGURAÇÕES DIFERENTES!'
+    carro = Carro(id=f'{pri.id}+{seg.id}', origem=pri.origem, velocidade=pri.velocidade, capacidade=pri.capacidade)
+    for item in pri.agenda[1:]+seg.agenda[1:]:
         if item.tipo == 'Cliente':
             carro.atendimento(item)
         else:
@@ -232,9 +260,14 @@ class Frota(object):
         self.deposito = mapa.deposito
         self.carros = {}
 
-    def __getitem__(self, item): return self.mapa.dict_referencias[item]
     def __repr__(self): return f'Frota<{self.mapa.nome}>(|{len(self.carros)}/{self.mapa.max_carros}| x {len(self.clientes_atendidos)}/{len(self.mapa.clientes)}])'
     def __str__(self): return self.__repr__()
+
+    def __getitem__(self, item): return self.mapa.dict_referencias[item]
+
+    def __iter__(self) -> Iterator[Carro]:
+        for carro in self.carros.values():
+            yield carro
 
     @property
     def clientes_atendidos(self) -> set:
@@ -256,10 +289,19 @@ class Frota(object):
                             'tempo_deslocamento': t_desloc, 'tempo_layover': t_layover,
                             'qtd_clientes': len(carro.clientes_atendidos)})
         sumario = DataFrame(sumario)
-        sumario.loc[:, 'tempo_total'] = sumario['fim'] - sumario['inicio']
+        sumario.loc[:, 'tempo_atividade'] = sumario['fim'] - sumario['inicio']
         return sumario
 
     def novo_carro(self) -> Carro:
         carro = Carro(str(len(self.carros)), self.deposito, self.velocidade_carro, self.capacidade_carro)
         self.carros[carro.id] = carro
         return carro
+
+    def limpa_carros_sem_agenda(self):
+        para_remover = []
+        for id_carro, carro in self.carros.items():
+            if len(carro.agenda) < 2:
+                para_remover.append(id_carro)
+        for id_carro in para_remover:
+            self.carros.pop(id_carro)
+        return para_remover

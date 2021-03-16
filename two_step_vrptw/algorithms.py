@@ -86,13 +86,13 @@ def calcula_atratividade(parametros: Parametros, frota: Frota, clientes_viaveis:
     return sorted(atratividade.items(), key=lambda par: -1*par[1])[:parametros.clientes_recursao]
 
 
-def rota_independente(parametros: Parametros, frota: Frota) -> Carro:
+def _rota_independente(parametros: Parametros, frota: Frota, offset_iteracao: int) -> int:
 
     # Inicializamos um carro com um deposito qualquer
     carro = frota.novo_carro()
 
     # Loop principal de execucao:
-    for iteracao in range(parametros.limite_iteracoes):
+    for iteracao in range(offset_iteracao, parametros.limite_iteracoes):
 
         # Identificamos clientes viáveis
         clientes_viaveis = identifica_clientes_viaveis(frota, carro)
@@ -107,7 +107,7 @@ def rota_independente(parametros: Parametros, frota: Frota) -> Carro:
 
             # Se estamos em um depósito, retornamos
             else:
-                return carro
+                return iteracao
 
         # Se chegamos até aqui, temos clientes viáveis e podemos continuar. Calculamos a atratividade dos clientes
         atratividade = calcula_atratividade(parametros, frota, clientes_viaveis, carro)
@@ -120,13 +120,85 @@ def rota_independente(parametros: Parametros, frota: Frota) -> Carro:
         # Avançamos no caminho para o cliente
         carro.atendimento(frota[cliente])
 
+    # Retornamos a iteração máxima, em caso de falha
+    return iteracao
 
-def solucao(parametros:Parametros, frota:Frota, tipo='rota_independente'):
+
+def rota_independente(parametros: Parametros, frota: Frota):
+    offset_iteracao = 0
+    while len(frota.clientes_faltantes) > 0:
+        offset_iteracao = _rota_independente(parametros, frota, offset_iteracao)
+        if offset_iteracao >= (parametros.limite_iteracoes - 1):
+            frota.limpa_carros_sem_agenda()
+            return False, parametros.limite_iteracoes
+    frota.limpa_carros_sem_agenda()
+    return True, offset_iteracao
+
+
+def rota_coletiva(parametros: Parametros, frota: Frota) -> (bool, int):
+
+    # Inicializamos alguns novos carros
+    for _ in range(parametros.qtd_novos_carros_por_rodada):
+        frota.novo_carro()
+
+    # Loop principal de execucao:
+    for iteracao in range(parametros.limite_iteracoes):
+
+        # Sinalizamos que nessa iteração ainda não houve novo atendimento
+        houve_novo_atendimento = False
+
+        # Para cada carro na frota:
+        for carro in frota:
+
+            # Identificamos clientes viáveis
+            clientes_viaveis = identifica_clientes_viaveis(frota, carro)
+
+            # Se não temos clientes viáveis
+            if len(clientes_viaveis) == 0:
+
+                # Se estamos em um cliente, vamos até o depósito e avançamos no loop
+                if carro.agenda[-1].tipo == 'Cliente':
+                    carro.reabastecimento(frota.deposito)
+
+                # Aqui, o carro tem de estar em um depósito. Assim, finalizamos a iteração
+                continue
+
+            # Se chegamos até aqui, temos clientes viáveis e podemos continuar. Calculamos a atratividade dos clientes
+            atratividade = calcula_atratividade(parametros, frota, clientes_viaveis, carro)
+
+            # Selecionamos randomicamente um cliente viável por roleta
+            valor_atratividade = [cli[1] for cli in atratividade]
+            valor_atratividade_total = sum(valor_atratividade)
+            cliente = random.choice([cli[0] for cli in atratividade], p=[v/valor_atratividade_total for v in valor_atratividade])
+
+            # Avançamos no caminho para o cliente
+            carro.atendimento(frota[cliente])
+
+            # Sinalizamos que nessa iteração houve ao menos um novo atendimento
+            houve_novo_atendimento = True
+
+        # Se todos os clientes foram atendidos, retornamos o sucesso
+        if len(frota.clientes_faltantes) == 0:
+            frota.limpa_carros_sem_agenda()
+            return True, iteracao
+
+        # Se, após iterar todos os carros, não tivemos nenhum atendimento, acrescentamos novos carros
+        if not houve_novo_atendimento:
+            for _ in range(parametros.qtd_novos_carros_por_rodada):
+                frota.novo_carro()
+
+    # Retornamos a iteração máxima, em caso de falha
+    frota.limpa_carros_sem_agenda()
+    return False, iteracao
+
+
+def gera_solucao(parametros:Parametros, frota:Frota, tipo='rota_independente') -> (bool, int):
 
     if tipo == 'rota_independente':
-        while len(frota.clientes_faltantes) > 0:
-            rota_independente(parametros, frota)
+        return rota_independente(parametros, frota)
+
+    elif tipo == 'rota_coletiva':
+        return rota_coletiva(parametros, frota)
+
     else:
         raise NotImplementedError(f'Tipo nao implementado: {tipo}')
-
-    return frota

@@ -25,7 +25,8 @@ if __name__ == '__main__':
         peso_urgencia     = 0.165,  # 0.165,
         peso_recursoes    = 2.0,    # 2.0
         limite_recursoes  = 3,      # 3
-        clientes_recursao = 4       # 5
+        clientes_recursao = 4,      # 5
+        limite_iteracoes = 1000
     )
 
     if ('parse' in sys.argv):
@@ -112,24 +113,50 @@ if __name__ == '__main__':
             pprint(frota)
             pprint(carro)
 
-    if ('independente' in sys.argv):
+    if ('independente' in sys.argv) or ('individual' in sys.argv):
         if TO_TIME:
             mapa = Mapa('data/solomon_1987/r2/r201.txt')
             frota = Frota(mapa, 1)
-            time_it('SOLUCAO POR ROTA INDEPENDENTE', 10, lambda: algorithms.solucao(parametros, frota, tipo='rota_independente'))
+            time_it('SOLUCAO POR ROTA INDEPENDENTE', 10, lambda: algorithms.gera_solucao(parametros, frota, tipo='rota_independente'))
             sumario = frota.sumario
             print(frota)
             print('Inicio:', sumario['inicio'].min(), 'Fim:', sumario['fim'].max(),
-                  'Distancia:', round(sumario['distancia'].sum(), 3), 'Tempo Total:', sumario['tempo_total'].sum(),
+                  'Distancia:', round(sumario['distancia'].sum(), 3), 'T.Atividade', sumario['tempo_atividade'].sum(),
+                  'Tempo Total:', sumario['fim'].sum(),
                   'T.Deslocamento:', sumario['tempo_deslocamento'].sum(), 'T.Layover:', sumario['tempo_layover'].sum())
         else:
             mapa = Mapa('data/solomon_1987/r2/r201.txt')
             frota = Frota(mapa, 1)
-            frota = algorithms.solucao(parametros, frota, tipo='rota_independente')
+            result = algorithms.gera_solucao(parametros, frota, tipo='rota_independente')
+            sumario = frota.sumario
+            print(frota, result)
+            print('Inicio:', sumario['inicio'].min(), 'Fim:', sumario['fim'].max(),
+                  'Distancia:', round(sumario['distancia'].sum(), 3), 'T.Atividade', sumario['tempo_atividade'].sum(),
+                  'Tempo Total:', sumario['fim'].sum(),
+                  'T.Deslocamento:', sumario['tempo_deslocamento'].sum(), 'T.Layover:', sumario['tempo_layover'].sum())
+            pprint(sumario)
+            frota.carros['0'].resultado()
+
+    if ('coletiva' in sys.argv):
+        if TO_TIME:
+            mapa = Mapa('data/solomon_1987/r2/r201.txt')
+            frota = Frota(mapa, 1)
+            time_it('SOLUCAO POR ROTA COLETIVA', 10, lambda: algorithms.gera_solucao(parametros, frota, tipo='rota_coletiva'))
             sumario = frota.sumario
             print(frota)
             print('Inicio:', sumario['inicio'].min(), 'Fim:', sumario['fim'].max(),
-                  'Distancia:', round(sumario['distancia'].sum(), 3), 'Tempo Total:', sumario['tempo_total'].sum(),
+                  'Distancia:', round(sumario['distancia'].sum(), 3), 'T.Atividade', sumario['tempo_atividade'].sum(),
+                  'Tempo Total:', sumario['fim'].sum(),
+                  'T.Deslocamento:', sumario['tempo_deslocamento'].sum(), 'T.Layover:', sumario['tempo_layover'].sum())
+        else:
+            mapa = Mapa('data/solomon_1987/r2/r201.txt')
+            frota = Frota(mapa, 1)
+            result = algorithms.gera_solucao(parametros, frota, tipo='rota_coletiva')
+            sumario = frota.sumario
+            print(frota, result)
+            print('Inicio:', sumario['inicio'].min(), 'Fim:', sumario['fim'].max(),
+                  'Distancia:', round(sumario['distancia'].sum(), 3), 'T.Atividade', sumario['tempo_atividade'].sum(),
+                  'Tempo Total:', sumario['fim'].sum(),
                   'T.Deslocamento:', sumario['tempo_deslocamento'].sum(), 'T.Layover:', sumario['tempo_layover'].sum())
             pprint(sumario)
             frota.carros['0'].resultado()
