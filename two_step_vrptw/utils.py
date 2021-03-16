@@ -305,3 +305,6 @@ class Frota(object):
         for id_carro in para_remover:
             self.carros.pop(id_carro)
         return para_remover
+
+    def substitui_carros(self, novos_carros: List[Carro]):
+        self.carros = {c.id: c for c in novos_carros}

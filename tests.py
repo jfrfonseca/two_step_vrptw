@@ -137,6 +137,12 @@ if __name__ == '__main__':
             pprint(sumario)
             frota.carros['0'].resultado()
 
+            print('-'*40)
+            algorithms.otimizacao_termino_mais_cedo(frota)
+            print(frota)
+            pprint(frota.sumario)
+            list(frota.carros.values())[0].resultado()
+
     if ('coletiva' in sys.argv):
         if TO_TIME:
             mapa = Mapa('data/solomon_1987/r2/r201.txt')

@@ -11,7 +11,7 @@ from typing import List, Tuple
 from numpy import random
 from pandas import DataFrame
 
-from two_step_vrptw.utils import Deposito, Cliente, Carro, Frota, Parametros, copia_carro
+from two_step_vrptw.utils import Deposito, Cliente, Carro, Frota, Parametros, copia_carro, unifica_agendas_carros
 
 
 # ######################################################################################################################
@@ -202,3 +202,24 @@ def gera_solucao(parametros:Parametros, frota:Frota, tipo='rota_independente') -
 
     else:
         raise NotImplementedError(f'Tipo nao implementado: {tipo}')
+
+
+def otimizacao_termino_mais_cedo(frota: Frota) -> dict:
+
+    # Ordenamos os carros da frota em ordem crescente da hora de término
+    ordenados = sorted(frota, key=lambda carro: carro.fim)
+
+    # Verificamos as possíveis merges de carros
+    reduzidos = {}
+    resultantes = []
+    for i, carro in enumerate(ordenados[:-1]):
+        if carro.id in reduzidos: continue
+        resultantes.append(carro)
+        for j, outro in enumerate(ordenados[i+1:]):
+            if outro.id in reduzidos: continue
+            if outro.inicio > resultantes[-1].fim:
+                resultantes[-1] = unifica_agendas_carros(resultantes[-1], outro)
+                reduzidos[outro.id] = outro
+    if len(reduzidos) > 0:
+        frota.substitui_carros(resultantes)
+    return reduzidos
