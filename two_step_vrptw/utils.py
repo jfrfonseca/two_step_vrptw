@@ -7,6 +7,7 @@ __copyright__ = "Copyright (c) 2021 Isabella Freitas & José Fonseca. MIT. See a
 
 
 from math import sqrt
+from copy import deepcopy
 from sys import maxsize as int_inf
 from typing import List, Tuple, Union, Dict, Iterator
 from dataclasses import dataclass, field
@@ -53,6 +54,9 @@ class Cliente(Posicao):
     tipo = 'Cliente'
 
     def __repr__(self): return f'CLIENTE({self.demanda} ({self.x}, {self.y}) [{self.inicio}, {self.fim}] {self.servico})'
+
+    def __post_init__(self):
+        assert (self.fim - self.inicio) >= self.servico, f'CLIENTE COM JANELA DE SERVICO INVALIDA! {self}'
 
 
 @dataclass(frozen=True)
@@ -235,11 +239,16 @@ def unifica_agendas_carros(pri: Carro, seg: Carro):
         {str(seg.origem), seg.velocidade, seg.capacidade})
     ) == 3, 'TENTATIVA DE UNIFICAR CARROS DE CONFIGURAÇÕES DIFERENTES!'
     carro = Carro(id=f'{pri.id}+{seg.id}', origem=pri.origem, velocidade=pri.velocidade, capacidade=pri.capacidade)
-    for item in pri.agenda[1:]+seg.agenda[1:]:
+    for item in pri.agenda[1:]:
         if item.tipo == 'Cliente':
-            carro.atendimento(item)
+            carro.atendimento(deepcopy(item))
         else:
-            carro.reabastecimento(item)
+            carro.reabastecimento(deepcopy(item))
+    for item in seg.agenda[1:]:
+        if item.tipo == 'Cliente':
+            carro.atendimento(deepcopy(item))
+        else:
+            carro.reabastecimento(deepcopy(item))
     return carro
 
 
@@ -262,6 +271,7 @@ class Frota(object):
 
     def __repr__(self): return f'Frota<{self.mapa.nome}>(|{len(self.carros)}/{self.mapa.max_carros}| x {len(self.clientes_atendidos)}/{len(self.mapa.clientes)}])'
     def __str__(self): return self.__repr__()
+    def __len__(self): return len(self.carros)
 
     def __getitem__(self, item): return self.mapa.dict_referencias[item]
 

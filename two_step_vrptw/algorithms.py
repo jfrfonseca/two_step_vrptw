@@ -33,7 +33,7 @@ def identifica_clientes_viaveis(frota: Frota, carro: Carro) -> dict:
     # Somamos com o tempo de servico em cada cliente
     # Somamos com a hora de inicio da janela de atendimento em cada cliente
     # Subtraimos a hora de fim da janela de atendimento em cada cliente
-    # Queremos apenas os resultados que não sejam positivos
+    # Queremos apenas os resultados que não sejam negativos
     # Desses, identificamos a atratividade
     str_clientes_viaveis = list(clientes_viaveis.keys())  # Speedup de acesso de variável
     posicao_atual, velocidade = str(carro.agenda[-1]), carro.velocidade  # SpeedUp de acesso de variável
@@ -90,6 +90,7 @@ def _rota_independente(parametros: Parametros, frota: Frota, offset_iteracao: in
 
     # Inicializamos um carro com um deposito qualquer
     carro = frota.novo_carro()
+    if len(frota) > frota.max_carros: return parametros.limite_iteracoes
 
     # Loop principal de execucao:
     for iteracao in range(offset_iteracao, parametros.limite_iteracoes):
@@ -99,6 +100,7 @@ def _rota_independente(parametros: Parametros, frota: Frota, offset_iteracao: in
 
         # Se não temos clientes viáveis
         if len(clientes_viaveis) == 0:
+            if iteracao < 2: return parametros.limite_iteracoes
 
             # Se estamos em um cliente, vamos até o depósito e avançamos no loop
             if carro.agenda[-1].tipo == 'Cliente':
@@ -107,7 +109,7 @@ def _rota_independente(parametros: Parametros, frota: Frota, offset_iteracao: in
 
             # Se estamos em um depósito, retornamos
             else:
-                return iteracao
+                return iteracao + 1
 
         # Se chegamos até aqui, temos clientes viáveis e podemos continuar. Calculamos a atratividade dos clientes
         atratividade = calcula_atratividade(parametros, frota, clientes_viaveis, carro)
@@ -121,7 +123,7 @@ def _rota_independente(parametros: Parametros, frota: Frota, offset_iteracao: in
         carro.atendimento(frota[cliente])
 
     # Retornamos a iteração máxima, em caso de falha
-    return iteracao
+    return iteracao + 1
 
 
 def rota_independente(parametros: Parametros, frota: Frota):
@@ -143,6 +145,7 @@ def rota_coletiva(parametros: Parametros, frota: Frota) -> (bool, int):
 
     # Loop principal de execucao:
     for iteracao in range(parametros.limite_iteracoes):
+        if ((iteracao+1) % 100) == 0: print(frota)
 
         # Sinalizamos que nessa iteração ainda não houve novo atendimento
         houve_novo_atendimento = False
@@ -155,6 +158,7 @@ def rota_coletiva(parametros: Parametros, frota: Frota) -> (bool, int):
 
             # Se não temos clientes viáveis
             if len(clientes_viaveis) == 0:
+                if iteracao < 2: return False, parametros.limite_iteracoes
 
                 # Se estamos em um cliente, vamos até o depósito e avançamos no loop
                 if carro.agenda[-1].tipo == 'Cliente':
@@ -186,6 +190,7 @@ def rota_coletiva(parametros: Parametros, frota: Frota) -> (bool, int):
         if not houve_novo_atendimento:
             for _ in range(parametros.qtd_novos_carros_por_rodada):
                 frota.novo_carro()
+            if len(frota) > frota.max_carros: return False, iteracao
 
     # Retornamos a iteração máxima, em caso de falha
     frota.limpa_carros_sem_agenda()
@@ -215,11 +220,13 @@ def otimizacao_termino_mais_cedo(frota: Frota) -> dict:
     for i, carro in enumerate(ordenados[:-1]):
         if carro.id in reduzidos: continue
         resultantes.append(carro)
-        for j, outro in enumerate(ordenados[i+1:]):
+        for outro in ordenados[1+1:]:
             if outro.id in reduzidos: continue
-            if outro.inicio > resultantes[-1].fim:
+            if resultantes[-1].fim <= outro.inicio:
                 resultantes[-1] = unifica_agendas_carros(resultantes[-1], outro)
                 reduzidos[outro.id] = outro
+    if ordenados[-1].id not in reduzidos:
+        resultantes.append(ordenados[-1])
     if len(reduzidos) > 0:
         frota.substitui_carros(resultantes)
     return reduzidos

@@ -1,0 +1,63 @@
+python3 run_testfile.py data/solomon_1987/c1/c101.txt
+python3 run_testfile.py data/solomon_1987/c1/c102.txt
+python3 run_testfile.py data/solomon_1987/c1/c103.txt
+python3 run_testfile.py data/solomon_1987/c1/c104.txt
+python3 run_testfile.py data/solomon_1987/c1/c105.txt
+python3 run_testfile.py data/solomon_1987/c1/c106.txt
+python3 run_testfile.py data/solomon_1987/c1/c107.txt
+python3 run_testfile.py data/solomon_1987/c1/c108.txt
+python3 run_testfile.py data/solomon_1987/c1/c109.txt
+
+python3 run_testfile.py data/solomon_1987/c2/c201.txt
+python3 run_testfile.py data/solomon_1987/c2/c202.txt
+python3 run_testfile.py data/solomon_1987/c2/c203.txt
+python3 run_testfile.py data/solomon_1987/c2/c204.txt
+python3 run_testfile.py data/solomon_1987/c2/c205.txt
+python3 run_testfile.py data/solomon_1987/c2/c206.txt
+python3 run_testfile.py data/solomon_1987/c2/c207.txt
+python3 run_testfile.py data/solomon_1987/c2/c208.txt
+
+
+python3 run_testfile.py data/solomon_1987/r1/r101.txt
+python3 run_testfile.py data/solomon_1987/r1/r102.txt
+python3 run_testfile.py data/solomon_1987/r1/r103.txt
+python3 run_testfile.py data/solomon_1987/r1/r104.txt
+python3 run_testfile.py data/solomon_1987/r1/r105.txt
+python3 run_testfile.py data/solomon_1987/r1/r106.txt
+python3 run_testfile.py data/solomon_1987/r1/r107.txt
+python3 run_testfile.py data/solomon_1987/r1/r108.txt
+python3 run_testfile.py data/solomon_1987/r1/r109.txt
+python3 run_testfile.py data/solomon_1987/r1/r110.txt
+python3 run_testfile.py data/solomon_1987/r1/r111.txt
+python3 run_testfile.py data/solomon_1987/r1/r112.txt
+
+python3 run_testfile.py data/solomon_1987/r2/r201.txt
+python3 run_testfile.py data/solomon_1987/r2/r202.txt
+python3 run_testfile.py data/solomon_1987/r2/r203.txt
+python3 run_testfile.py data/solomon_1987/r2/r204.txt
+python3 run_testfile.py data/solomon_1987/r2/r205.txt
+python3 run_testfile.py data/solomon_1987/r2/r206.txt
+python3 run_testfile.py data/solomon_1987/r2/r207.txt
+python3 run_testfile.py data/solomon_1987/r2/r208.txt
+python3 run_testfile.py data/solomon_1987/r2/r209.txt
+python3 run_testfile.py data/solomon_1987/r2/r210.txt
+python3 run_testfile.py data/solomon_1987/r2/r211.txt
+
+
+python3 run_testfile.py data/solomon_1987/rc1/rc101.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc102.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc103.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc104.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc105.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc106.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc107.txt
+python3 run_testfile.py data/solomon_1987/rc1/rc108.txt
+
+python3 run_testfile.py data/solomon_1987/rc2/rc201.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc202.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc203.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc204.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc205.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc206.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc207.txt
+python3 run_testfile.py data/solomon_1987/rc2/rc208.txt
